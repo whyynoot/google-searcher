@@ -5,12 +5,6 @@ from typing import List
 # Содержит в себе контент анализ, фотографию по наличии, регион, актуальность
 class SearchResult:
     # TODO: add source (откуда пришла ссылка)
-    id = ""
-    url = ""
-    photo = ""
-    region = ""
-    relevance = None
-    content_analysis = ""
     
     # TODO: Разобраться с конструкторами
     def __init__(self, SearchResultDB):
@@ -41,7 +35,7 @@ class SearchResultAnalyzerInterface:
 
 # TODO: Реализовать класс, и имплементировать его инициализацию и настройку в AcSearcher, а также работу
 # Класс предсотавляющий возможность анализа ссылок гугл, на их релеватность таким образом чтобы выдать топ лучших ссылок, на основе уже пропаршенных ссылок
-class SearchResultAnalyzer:
+class SearchResultAnalyzer(SearchResultAnalyzerInterface):
 
     # Конструктор, который должен получить на вход количество возвращаемых ссылок, и другие настройки
     # TODO: Реализовать согласно замсылу
