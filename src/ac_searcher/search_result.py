@@ -16,10 +16,15 @@ class SearchResult:
         self.content_analysis = ""
 
     def __init__(self, url, photo, region, content_analysis):
+        # URL странички
         self.url = url
+        # Фотография со странички, сохраненная в локальной файловой системе
         self.photo = photo
+        # Регион
         self.region = region
+        # Дата
         self.relevance = datetime.now()
+        # Результат контент-анализа
         self.content_analysis = content_analysis
     
     def __str__(self) -> str:
