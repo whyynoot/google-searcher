@@ -12,7 +12,7 @@ from proxy import get_random_proxy
 class Searcher: 
     def process(self, user_request: UserRequest) -> List[Link]:
         raise NotImplemented
-
+ 
 # SearcherSettings настройки необходимые для работы сеарчера
 class SearcherSettings:
     # Anything to be added, for example
