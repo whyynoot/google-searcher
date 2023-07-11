@@ -9,12 +9,6 @@ from search_result import SearchResult
 
 # AcSearcher класс для описания программы, ее инициализации и запуска работы
 class AcSearcher:
-    # Используем лист для того, чтобы было возможно использовать несколько поисковиков
-    searchers = []
-    interpreter = InputInterpreter
-    parser_html = ParserHTML
-    config = dict
-
     # Инициализация главного класса приложения. На вход подается конфигурация, от конфигурации мы меняем некоторые настройки
     # классов инициализируемых далее
     # TODO: Разобраться с инициализацией Dash так, чтобы он был внутри этого класса. И даш можно было бы запускать на основе его.
@@ -22,6 +16,9 @@ class AcSearcher:
         self.interpreter = ExampleInterpreter()
 
         searcher_settings = SearcherSettings(postfixes=config["cities"], pages=config["pages_to_scan"])
+        
+        # Используем массив из классов типа сеарчер, чтобы можно было использовать несколько поисковых систем
+        self.searchers = []
         self.searchers.append(GoogleSearcher(searcher_settings))
         self.parser_html = ParserHTML(config)
     
