@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, f
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from search_result import SearchResultModel
+from search_result import SearchResult
 from typing import List
 
 # Создание подключения к базе данных
@@ -56,7 +56,7 @@ def save_search_result(search_result):
 def get_search_result_from_database(search_result_id):
     result = session.query(SearchResultDB).filter_by(id=search_result_id).first()
     if result:
-        search_result = SearchResultModel(result)
+        search_result = SearchResult(result)
         return search_result
     else:
         return None
@@ -66,7 +66,7 @@ def get_all_search_results_from_database():
     results = session.query(SearchResultDB).all()
     listings = []
     for result in results:
-        listing = SearchResultModel(result)
+        listing = SearchResult(result)
         listings.append(listing)
     return listings
 
@@ -84,12 +84,12 @@ class DataBaseManagerInterface:
 
     # Запись в бд, обработка ошибок, возврат записалось ли и тд. Успешно и тд
     # Класс не должен падать, если ошибочный коммит и тд (вдруг потеряли доступ к БД)
-    def save_search_result(self, search_result: SearchResultModel) -> bool: 
+    def save_search_result(self, search_result: SearchResult) -> bool: 
         raise NotImplemented
     
     # Получить все резульататы
     # На возврат идут SearchResultModel массив
-    def get_search_results(self) -> List[SearchResultModel]:
+    def get_search_results(self) -> List[SearchResult]:
         raise NotImplemented
     
     # Разоварать подклчючение к бд, чтобы не терять данные в случае экстренного завершения и тд.
