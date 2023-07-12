@@ -17,6 +17,7 @@ class Searcher:
 class SearcherSettings:
     # Anything to be added, for example
     # user_agents = []
+    postfixes = []
 
     def __init__(self, postfixes: List[str]=[""], pages: int=10) -> None:
         # Лист возможных постфиксов для добавления в запрос
