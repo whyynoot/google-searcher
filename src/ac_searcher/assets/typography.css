@@ -1,0 +1,13 @@
+@font-face {
+  font-family: Calibri;
+  src: url(fonts/calibri.ttf);
+}
+
+body {
+    font-family: Calibri;
+    src: url(fonts/calibri.ttf);
+    background: #f1f0fe;
+}
+h1, h2, h3, h4, h5, h6 {
+    front: boild;
+}
