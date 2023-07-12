@@ -124,7 +124,7 @@ def main():
     # app = AcSearcher(config)
     # app.run()
 
-    app.run_server(debug=True)
+    app.run_server(debug=True, host="10.220.75.63", port="8050")
 
 if __name__ == "__main__": 
     main()
