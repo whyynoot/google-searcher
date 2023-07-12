@@ -35,7 +35,7 @@ class GoogleSearcher(Searcher):
         if settings.pages_to_scan != None: 
             self.PAGES_NEEDED = settings.pages_to_scan * 10
         if settings.postfixes != None:
-            self.POSTFIXES = self.POSTFIXES.extend(SearcherSettings.postfixes)
+            self.POSTFIXES = self.POSTFIXES.extend(settings.postfixes)
         self.headers = Headers()
 
     # основной метод, который на основе запроса пользователя возвращает все найденные результаты

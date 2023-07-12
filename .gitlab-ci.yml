@@ -1,0 +1,17 @@
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  # DATEBASE_URL: can be added
+
+cache:
+  paths:
+    - .cache/pip
+
+deploy:
+  stage: deploy
+  tags:
+    - ci-apps-dev-srv
+  script: 
+    - echo "Starting deploy!"
+    - pip install -r requirements.txt
+    - python3.10 src/ac_searcher/main.py
+  environment: production
