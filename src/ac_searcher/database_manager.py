@@ -76,8 +76,6 @@ def get_all_search_results_from_database():
 # Применяется шаблон Фасад.
 # Реализация варируется взависимсоти от БД.
 class DataBaseManagerInterface: 
-    # атрибуты нужные для работы
-
     # Конструктор, в котором происходит реализация
     def __init__(self, config) -> None:
         raise NotImplemented

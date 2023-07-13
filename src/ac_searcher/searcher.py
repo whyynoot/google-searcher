@@ -12,18 +12,17 @@ from proxy import get_random_proxy
 class Searcher: 
     def process(self, user_request: UserRequest) -> List[Link]:
         raise NotImplemented
-
+ 
 # SearcherSettings настройки необходимые для работы сеарчера
 class SearcherSettings:
-    # Лист возможных постфиксов для добавления 
-    postfixes = [str]
-    pages_to_scan = int
-
     # Anything to be added, for example
     # user_agents = []
+    postfixes = []
 
     def __init__(self, postfixes: List[str]=[""], pages: int=10) -> None:
+        # Лист возможных постфиксов для добавления в запрос
         self.postfixes = postfixes
+        # Количество страниц, нужных для поиска
         self.pages_to_scan = pages
 
 # GoogleSearcher класс для поиска в гугле, работает на основе интерфейса Searcher
@@ -36,7 +35,7 @@ class GoogleSearcher(Searcher):
         if settings.pages_to_scan != None: 
             self.PAGES_NEEDED = settings.pages_to_scan * 10
         if settings.postfixes != None:
-            self.POSTFIXES = settings.postfixes
+            self.POSTFIXES = self.POSTFIXES.extend(settings.postfixes)
         self.headers = Headers()
 
     # основной метод, который на основе запроса пользователя возвращает все найденные результаты
