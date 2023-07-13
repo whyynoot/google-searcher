@@ -3,7 +3,7 @@ from input_interpreter import InputInterpreter, ExampleInterpreter
 from link import Link
 from typing import List
 from parser_html import ParserHTML
-from database_manager import save_search_result
+# from database_manager import save_search_result
 from search_result import SearchResult
 import dash
 from dash import dcc
@@ -30,30 +30,27 @@ def func(n_clicks, query):
         print("Webapp not initialized")
     else:
         return web_app.process_query(n_clicks, query)
-app.css.config.serve_locally = True
-app.scripts.config.serve_locally = True
-app.css.append_css({
-    'external_url': app.get_asset_url('assets/typography.css')
-})
+# app.css.config.serve_locally = True
+# app.scripts.config.serve_locally = True
+# app.css.append_css({
+#     'external_url': app.get_asset_url('typography.css')
+# })
 
 
 # AcSearcher класс для описания программы, ее инициализации и запуска работы
 class AcSearcher:
-    # Используем лист для того, чтобы было возможно использовать несколько поисковиков
-    searchers = []
-    interpreter = InputInterpreter
-    parser_html = ParserHTML
-    config = dict
-    parsed_links = []
 
     # Инициализация главного класса приложения. На вход подается конфигурация, от конфигурации мы меняем некоторые настройки
     # классов инициализируемых далее
     def __init__(self, config):
         self.interpreter = ExampleInterpreter()
         searcher_settings = SearcherSettings(postfixes=config["cities"], pages=config["pages_to_scan"])
+
+        self.searchers = []
         self.searchers.append(GoogleSearcher(searcher_settings))
         self.parser_html = ParserHTML(config)
-        
+
+        self.config = config
         # Настраиваем под даш.
         global web_app
         web_app = self
@@ -61,11 +58,10 @@ class AcSearcher:
     # Метод запуска даш.
     def run(self):
         try:
-            app.run_server(debug=True)
+            app.run_server(debug=True, port=self.config['server']['port'], host=self.config['server']['host'])
         except Exception as e:
             print("Fatal dash, server error, restarting...")
             self.run()
-    
         
     # Метод обработки входного запроса нашем приложением. 
     # На вход подается запрос пользователя - на выход выдаются полностью проработанные ссылки полностью.
@@ -78,7 +74,7 @@ class AcSearcher:
             searcher_links = searcher.process(user_request)
             links.extend(searcher_links)
 
-        #print(f"Finished parsing searchers, total links: {len(links)}")
+        print(f"Finished parsing searchers, total links: {len(links)}\nStariting parsing them...")
 
         unique_links = self.get_uniquie_link_list(links)
 
@@ -101,6 +97,7 @@ class AcSearcher:
         if n_clicks is None:
             return dash.no_update
 
+        print("Starting processing query...")
         # через метод process мы отправляем пользовательский запрос на дальнейшую обработку
         parsed_links = self.process(query)
 

@@ -7,7 +7,7 @@ class UserRequest:
 
     def __init__(self, obj: str, goal: str, postive: List[str], negative: List[str]):
         # object - интересующий объект поиска, его вхождение обязательно для нашего поискового запроса
-        self.obejct = obj
+        self.object = obj
         # goal - интересующая нас цель. Цена, рубли, квадратные метры и другое
         self.goal = goal 
         # positive - массив позитивных кейвордов, их пристутсвие уточняет поисковой запрос

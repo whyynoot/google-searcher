@@ -35,7 +35,7 @@ class GoogleSearcher(Searcher):
         if settings.pages_to_scan != None: 
             self.PAGES_NEEDED = settings.pages_to_scan * 10
         if settings.postfixes != None:
-            self.POSTFIXES = self.POSTFIXES.extend(settings.postfixes)
+            self.POSTFIXES.extend(settings.postfixes)
         self.headers = Headers()
 
     # основной метод, который на основе запроса пользователя возвращает все найденные результаты
@@ -82,8 +82,7 @@ class GoogleSearcher(Searcher):
         request_url = urljoin(self.BASE_URL, "?" + encoded_params)
 
         try:
-            response = requests.get(request_url, headers=self.headers.get_headers(), 
-                                    proxies=get_random_proxy())
+            response = requests.get(request_url, headers=self.headers.get_headers())
             #print(response)
             if response.status_code == requests.codes.ok: 
                 return response.text
@@ -136,5 +135,5 @@ class GoogleSearcher(Searcher):
     @staticmethod
     def form_google_reuqest(user_input: UserRequest, postfix: str) -> str:
         #print(f'"{user_input.obejct}" {postfix} {", ".join(user_input.positive)} {" ".join("-{}".format(x) for x in user_input.negative)}')
-        return f'"{user_input.obejct}" {postfix} {", ".join(user_input.positive)} {" ".join("-{}".format(x) for x in user_input.negative)}'
+        return f'"{user_input.object}" {postfix} {", ".join(user_input.positive)} {" ".join("-{}".format(x) for x in user_input.negative)}'
 

@@ -39,7 +39,7 @@ class ParserHTML:
                 pass
         except Exception as e:
             pass
-            print("network error dutring parsing html")
+            #print("network error dutring parsing html")
             #raise Exception("network error", e)
         
         if text:
@@ -89,7 +89,7 @@ class ParserHTML:
                 #     flag_img = 1
         except Exception as e:
             pass
-            print("error finding image")
+            #print("error finding image")
 
         region = link.request_region
         
@@ -101,7 +101,8 @@ class ParserHTML:
                 for p in ps:
                     content_analysis += " " + p.get_text()
         except:
-            print("error during content analysis")
+            pass
+            #print("error during content analysis")
 
         if content_analysis == "" and flag_img == 0 and region == "" and photo == "":
             return None
