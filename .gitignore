@@ -4,3 +4,5 @@ src/ac_searcher/__pycache__
 src/ac_searcher/__pycache__
 .idea 
 .DS_Store
+venv
+.idea
