@@ -30,8 +30,9 @@ class ParserHTML:
         text = ""
         #headers=self.headers.get_headers()
         try:
-            response = requests.get(link.url, proxies=get_random_proxy())
-            #print(response)
+            #response = requests.get(link.url, proxies=get_random_proxy())
+            response = requests.get(link.url, self.headers.get_headers(), timeout=2)
+            print(response)
             if response.status_code == requests.codes.ok: 
                  text = response.text
             else:
@@ -49,15 +50,15 @@ class ParserHTML:
         
         photo = ""
         first_strs = user_request.object.lower().split(' ')
-        
+        flag_img = 1
         try:
-            flag_img = 0
+            # flag_img = 0
             counter = 0
-            first_strs = user_request.object.lower().split(' ')
-            imgs = soup.find_all("img")
-            
-            for img in imgs:
-                second_strs = img['alt'].lower().split(' ')
+            # first_strs = user_request.object.lower().split(' ')
+            # imgs = soup.find_all("img")
+            #
+            # for img in imgs:
+            #     second_strs = img['alt'].lower().split(' ')
 
                 # for str1 in first_strs
                 #     for str2 in second_strs
@@ -86,8 +87,6 @@ class ParserHTML:
 
                 #     download(url_download, first_strs):
                 #     flag_img = 1
-                    
-                    
         except Exception as e:
             pass
             #print("error finding image")
@@ -102,7 +101,8 @@ class ParserHTML:
                 for p in ps:
                     content_analysis += " " + p.get_text()
         except:
-            print("error during content analysis")
+            pass
+            #print("error during content analysis")
 
         if content_analysis == "" and flag_img == 0 and region == "" and photo == "":
             return None

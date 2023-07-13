@@ -6,3 +6,4 @@ SQLAlchemy==2.0.18
 wget==3.2
 lxml==4.9.2
 psycopg2==2.9.6
+dash-bootstrap-components==1.4.1
