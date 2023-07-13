@@ -3,7 +3,7 @@ from input_interpreter import InputInterpreter, ExampleInterpreter
 from link import Link
 from typing import List
 from parser_html import ParserHTML
-# from database_manager import save_search_result
+from database_manager import DatabaseManager
 from search_result import SearchResult
 import dash
 from dash import dcc
@@ -50,6 +50,8 @@ class AcSearcher:
         self.searchers.append(GoogleSearcher(searcher_settings))
         self.parser_html = ParserHTML(config)
 
+        self.database_manager = DatabaseManager()
+
         self.config = config
         # Настраиваем под даш.
         global web_app
@@ -65,7 +67,6 @@ class AcSearcher:
         
     # Метод обработки входного запроса нашем приложением. 
     # На вход подается запрос пользователя - на выход выдаются полностью проработанные ссылки полностью.
-    # TODO: Добавить сохранение в БД.
     def process(self, user_input) -> List[SearchResult]:
         user_request = self.interpreter.analyse_input(user_input)
 
@@ -87,8 +88,11 @@ class AcSearcher:
             except Exception as e:
                 print("error during parsing link", e)
 
-        # for link in parsed_links:
-        #     save_search_result(link)
+
+        for link in parsed_links:
+            self.database_manager.save_search_result(link)
+
+        # TODO: Нужна обработка полученных ссылок, анализ на их релевантность
         
         return parsed_links
 

@@ -1,98 +1,137 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, func, Text
-from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from search_result import SearchResult
 from typing import List
 
-# Создание подключения к базе данных
-# TODO: Перенести ссылку в config, а еще лучше в .env или в переменные окружения. Она не должна быть в таком формате здесь.
-# TODO: Инициализацию engine нужно проводить в инициализации класса-менджера. Используем шаблон фасад, ограничвающий взаимодействие с БД. 
-# [подключение и тд приватные переменные] есть методы для работы с объектами, огранчивающие программный функционал
-engine = create_engine('postgresql://postgres:y5D6jGIf8XGQoKkr@10.220.75.63:5432/postgres')
+import sqlalchemy_utils
+from sqlalchemy import create_engine, Column, Date, func, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.exc import OperationalError
 
-# Создание базового класса моделей
-Base = declarative_base()
+from dotenv import load_dotenv
+import os
 
-# Определение модели таблицы
-# TODO: рассказать побольше про класс
-class SearchResultDB(Base):
-    __tablename__ = 'search_results0'
-    id = Column(UUID(as_uuid=True),
-                primary_key=True,
-                default=uuid.uuid4,
-                nullable=False,
-                unique=True,
-                )
-    url = Column(Text, nullable=False)
-    photo = Column(Text, nullable=True)
-    region = Column(Text, nullable=False)
-    relevance = Column(Date, nullable=False, server_default=func.current_date())
-    content_analysis = Column(Text, nullable=True)
-
-    def __init__(self, SearchResultModel):
-        self.url = SearchResultModel.url
-        self.photo = SearchResultModel.photo
-        self.region = SearchResultModel.region
-        self.content_analysis = SearchResultModel.content_analysis
+from search_result import SearchResult
+from idatabase_manager import IDatabaseManager
 
 
-# Создание таблицы в базе данных
-# TODO: перенос в конуструктор, проверка на ошибки создания, подключения, и так далее. Все ошибки нужно прокинуть на иницализации.
-Base.metadata.create_all(engine)
+# Класс предоставляет функциональность для управления базой данных,
+# включая инициализацию, сохранение и извлечение данных.
+class DatabaseManager(IDatabaseManager):
+    def __init__(self):
+        self.engine = None
+        self.Base = None
+        self.session = None
+        self.database_url = None
+        self.is_initialized = False
 
-# Создание сессии для работы с базой данных
-# TODO: Перенос в бд
-Session = sessionmaker(bind=engine)
-session = Session()
+        try:
+            self.initialize_database()
+            self.is_initialized = True
+        except OperationalError as e:
+            # Обработка ошибок при подключении
+            self.is_initialized = False
+            print("Error when connecting to database:", e)
+        except Exception as e:
+            # Обработка ошибок при инициализации
+            self.is_initialized = False
+            print("Database initialization error:", e)
 
-# TODO: перенести в методы
-def save_search_result(search_result):
-    new_result = SearchResultDB(search_result)
-    session.add(new_result)
-    session.commit()
+    def initialize_database(self):
+        self.get_database_config()
+        self.engine = create_engine(self.database_url)
+        # Проверка существует ли база данных
+        if not sqlalchemy_utils.database_exists(self.engine.url):
+            sqlalchemy_utils.create_database(self.engine.url, encoding='utf8mb4')
+            print(f"The new database has been created: {self.engine}")
+        else:
+            print("The database already exists")
 
+        self.Base = declarative_base()
+        self.define_model()
+        # Создание таблицы в базе данных
+        self.Base.metadata.create_all(self.engine)
 
-def get_search_result_from_database(search_result_id):
-    result = session.query(SearchResultDB).filter_by(id=search_result_id).first()
-    if result:
-        search_result = SearchResult(result)
-        return search_result
-    else:
-        return None
+    def get_database_config(self):
+        load_dotenv()
+        self.database_url = os.getenv("DATABASE_URL")
+        if self.database_url is None:
+            raise Exception("Failed to retrieve database URL from .env file.")
 
+    def define_model(self):
+        # Определение модели таблицы
+        class SearchResultDB(self.Base):
+            __tablename__ = 'search_results'
+            id = Column(UUID(as_uuid=True),
+                        primary_key=True,
+                        default=uuid.uuid4,
+                        nullable=False,
+                        unique=True,
+                        )
+            url = Column(Text, nullable=False)
+            photo = Column(Text, nullable=True)
+            region = Column(Text, nullable=False)
+            relevance = Column(Date, nullable=False, server_default=func.current_date())
+            content_analysis = Column(Text, nullable=True)
 
-def get_all_search_results_from_database():
-    results = session.query(SearchResultDB).all()
-    listings = []
-    for result in results:
-        listing = SearchResult(result)
-        listings.append(listing)
-    return listings
+            def __init__(self, SearchResultModel):
+                self.url = SearchResultModel.url
+                self.photo = SearchResultModel.photo
+                self.region = SearchResultModel.region
+                self.content_analysis = SearchResultModel.content_analysis
 
+        self.SearchResultDB = SearchResultDB
 
-# Интерфейс для работы с базой данных 
-# Используется для инициаозиации подключения и работы. 
-# Применяется шаблон Фасад.
-# Реализация варируется взависимсоти от БД.
-class DataBaseManagerInterface: 
-    # Конструктор, в котором происходит реализация
-    def __init__(self, config) -> None:
-        raise NotImplemented
+    def create_session(self):
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
 
-    # Запись в бд, обработка ошибок, возврат записалось ли и тд. Успешно и тд
-    # Класс не должен падать, если ошибочный коммит и тд (вдруг потеряли доступ к БД)
-    def save_search_result(self, search_result: SearchResult) -> bool: 
-        raise NotImplemented
-    
-    # Получить все резульататы
-    # На возврат идут SearchResultModel массив
-    def get_search_results(self) -> List[SearchResult]:
-        raise NotImplemented
-    
-    # Разоварать подклчючение к бд, чтобы не терять данные в случае экстренного завершения и тд.
-    def close_connection(self):
-        raise NotImplemented
-    
-# TODO: На основе интрейфейса написать класс
-# TODO: Удаляем не нужное и чистим код
+    def save_search_result(self, search_result):
+        try:
+            if not self.is_initialized:
+                print("Error: DatabaseManager is not initialized")
+            else:
+                self.create_session()
+                new_result = self.SearchResultDB(search_result)
+                self.session.add(new_result)
+                self.session.commit()
+        except Exception as e:
+            print("Error occurred during save_search_result():", e)
+            return False
+        finally:
+            self.close_session()
+
+        return True
+
+    def get_search_result_from_database(self, search_result_id):
+        try:
+            if not self.is_initialized:
+                print("Error: DatabaseManager is not initialized")
+            else:
+                self.create_session()
+                result = self.session.query(self.SearchResultDB).filter_by(id=search_result_id).first()
+                if result:
+                    search_result = SearchResult(result)
+                    return search_result
+                else:
+                    return None
+        finally:
+            self.close_session()
+
+    def get_all_search_results_from_database(self):
+        try:
+            if not self.is_initialized:
+                print("Error: DatabaseManager is not initialized")
+            else:
+                self.create_session()
+                results = self.session.query(self.SearchResultDB).all()
+                listings = []
+                for result in results:
+                    listing = SearchResult(result)
+                    listings.append(listing)
+                return listings
+        finally:
+            self.close_session()
+
+    def close_session(self):
+        if self.session is not None:
+            self.session.close()
