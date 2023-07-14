@@ -4,8 +4,9 @@ pandas==2.0.3
 Requests==2.31.0
 SQLAlchemy==2.0.18
 wget==3.2
-lxml==4.9.2
 psycopg2==2.9.6
 python-dotenv==1.0.0
 SQLAlchemy-Utils==0.41.1
 dash-bootstrap-components==1.4.1
+lxml==4.9.3
+nltk==3.8.1

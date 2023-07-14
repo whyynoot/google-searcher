@@ -56,8 +56,8 @@ class GoogleSearcher(Searcher):
                         links, result = self._parse_html(html)
 
                         # добавляем в ссылку регион откуда она пришла
-                        for link in links: 
-                            link.request_region = postfix
+                        for link in links:
+                            link.set_postfix(postfix)
                         links_array.extend(links)
 
                     except Exception as e:

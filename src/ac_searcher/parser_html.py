@@ -1,156 +1,147 @@
+from iparser_html import IHtmlParser
 from bs4 import BeautifulSoup
 from search_result import SearchResult
 import requests
-from proxy import get_random_proxy
 from headers import Headers
-import wget
 from link import Link
 from input_interpreter import UserRequest
-from typing import List
+#from config import city_settings
+from urllib.parse import urlsplit, urljoin, urlparse
+from collections import Counter
+import os
+import uuid
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
-# TODO: Переделать это
-class ParserHTML:
-    headers = Headers
-
-    def __init__(self, config):
-        self.headers = Headers()
-
-    # Функция скачивания файла нужного для дальнешей работы
-    def download(self, url, filename):
-        print("Starting Downloading...")
-        try:
-            wget.download(url, f'{filename}.png')
-            print("Successfully Downloaded.")
-        except:
-            print("Eror on download")
-
-    # оснавная точка входа в класс парсера, на вход подается ссылка, и запрос пользователя (используется для обработки и анализа)
-    # делает запрос на ссылку, и после парсит и анализирует
-    def analyze(self, link: Link, user_request: UserRequest):
-        text = ""
-        #headers=self.headers.get_headers()
-        try:
-            #response = requests.get(link.url, proxies=get_random_proxy())
-            response = requests.get(link.url, self.headers.get_headers(), timeout=2)
-            print(response)
-            if response.status_code == requests.codes.ok: 
-                 text = response.text
-            else:
-                pass
-        except Exception as e:
-            pass
-            #print("network error dutring parsing html")
-            #raise Exception("network error", e)
-        
-        if text:
-            soup = BeautifulSoup(response.text, 'lxml')
-        else: 
-            pass
-            raise Exception("not valid html returned")
-        
-        photo = ""
-        first_strs = user_request.object.lower().split(' ')
-        flag_img = 1
-        try:
-            # flag_img = 0
-            counter = 0
-            # first_strs = user_request.object.lower().split(' ')
-            # imgs = soup.find_all("img")
-            #
-            # for img in imgs:
-            #     second_strs = img['alt'].lower().split(' ')
-
-                # for str1 in first_strs
-                #     for str2 in second_strs
-                #         if str1 == str2
-                #         counter++
-                        
-                # if counter > 0
-                #     url_download = " "
-                #     url = img['src']
-                #     if url[0] == '/'
-                #         url_new = ""
-                #         counter_s = 0
-                #         for char in link.url
-
-                #             if char == '/'
-                #                 counter_s += 1
-    
-                #             if counter_s < 3
-                #                 url_new += char
-                #             else
-                #                 break
-                
-                #         url_download = url_new + url
-                #     else
-                #         url_download = url
-
-                #     download(url_download, first_strs):
-                #     flag_img = 1
-        except Exception as e:
-            pass
-            #print("error finding image")
-
-        region = link.request_region
-        
-        content_analysis = ""
-        try:
-            divs = soup.find_all('div')
-            for div in divs:
-                ps = div.find_all('p')
-                for p in ps:
-                    content_analysis += " " + p.get_text()
-        except:
-            pass
-            #print("error during content analysis")
-
-        if content_analysis == "" and flag_img == 0 and region == "" and photo == "":
-            return None
-        else:
-            return SearchResult(link.url, photo, region, content_analysis)
-
-# Интрефейс для работы с парсером страниц     
-# HTML парсер делает запрос на страницу, обрабатывает HTML и возвращает пропаршенные ссылки
-class HTMLParserInterface:
-    
-    # основной метод для работы с классом. 
-    def analyze(self, link: Link, user_request: UserRequest) -> SearchResult:
-        raise NotImplemented
 
 # Реализация интерйфейса HTML Parser
-# TODO: Сделать реализацию 
-class HTMLParser(HTMLParserInterface):
+class HTMLParser(IHtmlParser):
     # Атрибуты, например класс Header
     # Реализация на основе конфигурации
-    # В конфигурации идут как и по какому признаку индефицировать регион.
+    # В конфигурации идут, как и по какому признаку индефицировать регион.
     def __init__(self, config) -> None:
-        pass
+        self.headers = Headers()
+        self.config = config
 
     # основной метод для работы с классом. Делает запрос, поиск фотографии, сохранение, контект анализ, анализ региона и актуальности (через мета-теги)
-    # TODO: Нормально оформить
     def analyze(self, link: Link, user_request: UserRequest) -> SearchResult:
-        pass
+        html = self._request(link.url)
+        photo = ""
+        search_region = ""
+        perform_content_analysis = ""
+        if html != "":
+            soup = BeautifulSoup(html, 'lxml')
+            link_photo = self._search_photo(soup, user_request.object, link.url)
+
+            if link_photo != "":
+                photo = self._download_photo(link_photo)
+
+            search_region = self._search_region(soup, user_request, link)
+            perform_content_analysis = self._perform_content_analysis(soup)
+
+        search_result = SearchResult(url=link.url, photo=photo, region=search_region,
+                                     content_analysis=perform_content_analysis)
+
+        return search_result
 
     # Метод запроса страницы, на вход подается ссылка куда делать запрос, на выходе текст ответа (html) МЕТОД ПРИВАТНЫЙ
-    # TODO: Нормально оформить
     def _request(self, url: str) -> str:
-        pass
-    
+        try:
+            response = requests.get(url,
+                                    headers=self.headers.get_headers())  # Отправляем GET-запрос по указанной ссылке
+            html = response.text  # Получаем HTML-код страницы
+            return html
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred during the request: {str(e)}")
+            return ""
+
     # На вход подается объект soup в которой уже засунули html и он готов для работы, на выход мы получаем 1 фотографию (ссылку на нее). МЕТОД ПРИВАТНЫЙ
-    # TODO: Сделать нормально, не как говно и так далее
-    def _search_photo(self, soup) -> str:
-        pass
+    def _search_photo(self, soup, user_request, url) -> str:
+        images = soup.find_all('img')
+        base_url = self._get_base_url(url)
+        max_similarity = 0
+        result = ""
+        keywords = user_request.lower().split()
+        for image in images:
+            alt_text = image.get('alt', '').lower()
+            similarity = self._calculate_similarity(alt_text, keywords)
+            if similarity > max_similarity:
+                max_similarity = similarity
+                image_src = image.get('src', '')
+                absolute_src = self._get_absolute_url(base_url, image_src)
+                result = absolute_src
+        return result
 
     # Функция загрзуки, на вход мы получаем ссылку на файл, который надо загрузить, на выход мы отдаем сгенированное название нашей фотографии в файловой системе МЕТОД ПРИВАТНЫЙ
     def _download_photo(self, link: str) -> str:
-        pass
+        try:
+            response = requests.get(link, stream=True)
+            if response.status_code != 200:
+                return ""
+            filename = os.path.basename(link)
+            if not filename or os.path.exists(os.path.join('assets', filename)):
+                filename = f"{uuid.uuid4()}.jpg"
+            filepath = os.path.join('assets', filename)
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            with open(filepath, 'wb') as f:
+                for chunk in response.iter_content(1024):
+                    f.write(chunk)
+            return filepath
+        except Exception as e:
+            print("Error with download file", e)
+            return ""
 
     # Поиск региона, пытаемся удостовериться что регион из user_request был верный и тд.
-    # TODO: Реализовать поиск, а не просто по дефолту делать регион
     def _search_region(self, soup, user_request: UserRequest, link: Link) -> str:
-        pass
+        page_text = soup.get_text().lower()
+
+        present_cities = [city for city in self.config['cities'] if city.lower() in page_text]
+        if present_cities:
+            city_count = Counter()
+
+            for city in present_cities:
+                count = page_text.count(city.lower())
+                city_count[city] = count
+
+            most_common_city = city_count.most_common(1)
+            return most_common_city[0][0]
+        else:
+            return link.postfix
+
 
     # Произвести контект анализ страницы, на выходе результаты контент анализа. На вход поступает объект супа МЕТОД ПРИВАТНЫЙ
-    # TODO: Сделать нормальный, буду спрашивать Вадима, о результатах отпишу
     def _perform_content_analysis(self, soup) -> str:
-        pass
+        nltk.download('stopwords')  # Загрузка стоп-слов
+        nltk.download('punkt')  # Загрузка ресурсов для токенизации
+        result = ""
+
+        paragraphs = soup.find_all('p')
+        stop_words = set(stopwords.words('russian'))
+        word_counter = Counter()
+
+        for paragraph in paragraphs:
+            text = paragraph.get_text()
+            words = nltk.word_tokenize(text)
+            filtered_words = [word.lower() for word in words if word.isalpha() and word not in stop_words]
+            word_counter.update(filtered_words)
+
+        most_common_words = word_counter.most_common(5)
+        result = ' '.join(word for word, count in most_common_words)
+        return result
+
+    def _get_base_url(self, url):
+        parts = urlsplit(url)
+        base_url = f"{parts.scheme}://{parts.netloc}"
+        return base_url
+
+    def _get_absolute_url(self, base_url, url, ):
+        absolute_url = urljoin(base_url, url)
+        return absolute_url
+
+    def _calculate_similarity(self, text, keywords):
+        similarity = 0
+        for keyword in keywords:
+            if keyword in text:
+                similarity += 1
+        return similarity

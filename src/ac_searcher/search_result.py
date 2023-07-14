@@ -1,34 +1,30 @@
 from datetime import datetime
 from typing import List
 
-# Класс, для описания результата поиска
+
+# Класс, для описания результата поиска.
 # Содержит в себе контент анализ, фотографию по наличии, регион, актуальность
 class SearchResult:
-    # TODO: add source (откуда пришла ссылка)
-    
-    # TODO: Разобраться с конструкторами
-    def __init__(self, SearchResultDB):
-        self.id = SearchResultDB.id
-        self.url = SearchResultDB.url
-        self.photo = SearchResultDB.photo
-        self.region = SearchResultDB.region
-        self.relevance = SearchResultDB.relevance
-        self.content_analysis = ""
 
-    def __init__(self, url, photo, region, content_analysis):
-        # URL странички
-        self.url = url
-        # Фотография со странички, сохраненная в локальной файловой системе
-        self.photo = photo
-        # Регион
-        self.region = region
-        # Дата
-        self.relevance = datetime.now()
-        # Результат контент-анализа
-        self.content_analysis = content_analysis
-    
-    def __str__(self) -> str:
-        return f'[Search result] URL: {self.url} | Photo: {self.photo} | Region {self.region}'
+    def __init__(self, SearchResultDB=None, id="", url="", photo="", region="", relevance="", content_analysis=""):
+        if SearchResultDB is not None:
+            self.id = str(SearchResultDB.id)
+            self.url = SearchResultDB.url
+            self.photo = SearchResultDB.photo
+            self.region = SearchResultDB.region
+            self.relevance = SearchResultDB.relevance
+            self.content_analysis = SearchResultDB.content_analysis
+        else:
+            self.id = id
+            self.url = url
+            self.photo = photo
+            self.region = region
+            self.relevance = relevance
+            self.content_analysis = content_analysis
+
+    def __repr__(self):
+        return f"Listing(id={self.id}, url={self.url}, photo={self.photo}, region={self.region}, " \
+               f"relevance={self.relevance}, content_analysis={self.content_analysis})"
 
 
 # Класс предсотавляющий возможность анализа ссылок гугл, на их релеватность таким образом чтобы выдать топ лучших ссылок, на основе уже пропаршенных ссылок
@@ -37,6 +33,7 @@ class SearchResultAnalyzerInterface:
     # Метод процесс, который на вход получает массив из ссылок и возвращает ссылки уже лучше, но с отбором
     def process(self, parsed_links: List[SearchResult]) -> List[SearchResult]:
         raise NotImplemented
+
 
 # TODO: Реализовать класс, и имплементировать его инициализацию и настройку в AcSearcher, а также работу
 # Класс предсотавляющий возможность анализа ссылок гугл, на их релеватность таким образом чтобы выдать топ лучших ссылок, на основе уже пропаршенных ссылок
