@@ -82,7 +82,7 @@ class GoogleSearcher(Searcher):
         request_url = urljoin(self.BASE_URL, "?" + encoded_params)
 
         try:
-            response = requests.get(request_url, headers=self.headers.get_headers(), proxies=get_random_proxy())
+            response = requests.get(request_url, headers=self.headers.get_headers())
             #print(response)
             if response.status_code == requests.codes.ok: 
                 return response.text
