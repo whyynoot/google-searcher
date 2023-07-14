@@ -17,5 +17,6 @@ deploy:
     - git reset --hard HEAD
     - git pull origin master
     - cp /home/developer/config.py /home/developer/ac-searcher/src/ac_searcher/config.py
+    - cp /home/developer/proxy.py /home/developer/ac-searcher/src/ac_searcher/proxy.py
     - sudo systemctl restart ac-searcher.service
   environment: production
