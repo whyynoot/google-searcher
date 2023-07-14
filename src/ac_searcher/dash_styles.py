@@ -18,6 +18,7 @@ style_cell= {
     'background': '#f1f0fe',
     'padding': '40px',
     'table-layout': 'fixed',
+    'whiteSpace': 'pre-wrap',
 }
 
 
@@ -26,37 +27,44 @@ style_data_conditional = [
         'if': {'row_index': 'odd'},
         'backgroundColor': 'rgb(248, 248, 248)',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
     {
         'if': {'row_index': 'even'},
         'backgroundColor': 'white',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
     {
         'if': {'column_id': 'URL-адрес'},
         'width': '220%',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
     {
         'if': {'column_id': 'Фото'},
         'width': '20%',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
     {
         'if': {'column_id': 'Регион'},
         'width': '20%',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
     {
         'if': {'column_id': 'Актуальность'},
         'width': '20%',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
     {
         'if': {'column_id': 'Ключевые слова'},
         'width': '30%',
         'table - layout': 'fixed',
+        'whiteSpace': 'pre-wrap',
     },
 ]
 
-style = {'margin': '0 auto', 'background': 'white', 'border-radius': '5px', 'border': '25px solid #ffffff', 'background': '#f1f0fe', 'height': '100%', 'right': '10px', 'left': '10px', 'table-layout':'fixed'}
+style = {'margin': '0 auto', 'background': 'white', 'border-radius': '5px', 'border': '25px solid #ffffff', 'background': '#f1f0fe', 'height': '100%', 'right': '10px', 'left': '10px', 'table-layout':'fixed', 'whiteSpace': 'pre-wrap'}

@@ -62,6 +62,7 @@ class AcSearcher:
         try:
             app.run_server(debug=True, port=self.config['server']['port'], host=self.config['server']['host'])
         except Exception as e:
+            print(e, type(e))
             print("Fatal dash, server error, restarting...")
             self.run()
         
@@ -112,10 +113,10 @@ class AcSearcher:
             'Актуальность': [],
             'Ключевые слова': []
         }
-
+        photo_url = 'https://nic-pnb.ru/wp-content/uploads/2014/06/remarchuk.jpg'
         for link in parsed_links:
            data['URL-адрес'].append(link.url)
-           data['Фото'].append(link.photo)
+           data['Фото'].append(html.Img(src=photo_url, style={'width': '100px', 'height': '100px'}))
            data['Регион'].append(link.region)
            data['Актуальность'].append(link.relevance)
            data['Ключевые слова'].append("Coming later")
@@ -158,6 +159,13 @@ app.layout = html.Div(
                                   className="styleone"),
                         html.Button('Найти', id='submit-button', className="styletwo"),
                     ]),
-                html.Td(id='result-container', className="style-for-table"),
+                dcc.Loading(
+                    id='loading',
+                    type='circle',
+                    children=[
+                        html.Td(id='result-container', className="style-for-table")
+                    ],
+                    style={'font-size': '80px', 'width': '200px', 'height': '200px'}
+                )
             ]
 )
