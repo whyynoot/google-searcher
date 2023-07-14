@@ -23,6 +23,8 @@ class HTMLParser(IHtmlParser):
     def __init__(self, config) -> None:
         self.headers = Headers()
         self.config = config
+        nltk.download('stopwords')  # Загрузка стоп-слов
+        nltk.download('punkt')  # Загрузка ресурсов для токенизации
 
     # основной метод для работы с классом. Делает запрос, поиск фотографии, сохранение, контект анализ, анализ региона и актуальности (через мета-теги)
     def analyze(self, link: Link, user_request: UserRequest) -> SearchResult:
@@ -82,7 +84,7 @@ class HTMLParser(IHtmlParser):
             filename = os.path.basename(link)
             if not filename or os.path.exists(os.path.join('assets', filename)):
                 filename = f"{uuid.uuid4()}.jpg"
-            filepath = os.path.join('assets', filename)
+            filepath = os.path.join(os.path.dirname(__file__), 'assets', filename)
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             with open(filepath, 'wb') as f:
                 for chunk in response.iter_content(1024):
@@ -112,8 +114,6 @@ class HTMLParser(IHtmlParser):
 
     # Произвести контект анализ страницы, на выходе результаты контент анализа. На вход поступает объект супа МЕТОД ПРИВАТНЫЙ
     def _perform_content_analysis(self, soup) -> str:
-        nltk.download('stopwords')  # Загрузка стоп-слов
-        nltk.download('punkt')  # Загрузка ресурсов для токенизации
         result = ""
 
         paragraphs = soup.find_all('p')
