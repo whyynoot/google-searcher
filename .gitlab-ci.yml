@@ -14,6 +14,7 @@ deploy:
     - echo "Starting deploy!"
     - pip install -r requirements.txt
     - cd /home/developer/ac-searcher/
+    - git reset --hard HEAD
     - git pull origin master
     - cp /home/developer/config.py /home/developer/ac-searcher/src/ac_searcher/config.py
     - sudo systemctl restart ac-searcher.service
