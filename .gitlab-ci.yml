@@ -13,5 +13,8 @@ deploy:
   script: 
     - echo "Starting deploy!"
     - pip install -r requirements.txt
-    - python3.10 src/ac_searcher/main.py
+    - cd /home/developer/ac-searcher/
+    - git pull origin master
+    - cp /home/developer/config.py /home/developer/ac-searcher/src/ac_searcher/config.py
+    - sudo systemctl restart ac-searcher.service
   environment: production
