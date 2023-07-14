@@ -116,7 +116,7 @@ class AcSearcher:
         photo_url = 'https://nic-pnb.ru/wp-content/uploads/2014/06/remarchuk.jpg'
         for link in parsed_links:
            data['URL-адрес'].append(link.url)
-           data['Фото'].append(html.Img(src=photo_url, style={'width': '100px', 'height': '100px'}))
+           data['Фото'].append(link.photo)
            data['Регион'].append(link.region)
            data['Актуальность'].append(link.relevance)
            data['Ключевые слова'].append("Coming later")
