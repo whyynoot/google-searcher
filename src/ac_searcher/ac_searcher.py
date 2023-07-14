@@ -2,7 +2,7 @@ from searcher import Searcher, GoogleSearcher, SearcherSettings
 from input_interpreter import InputInterpreter, ExampleInterpreter
 from link import Link
 from typing import List
-from parser_html import ParserHTML
+from parser_html import HTMLParser
 from database_manager import DatabaseManager
 from search_result import SearchResult
 import dash
@@ -48,7 +48,7 @@ class AcSearcher:
 
         self.searchers = []
         self.searchers.append(GoogleSearcher(searcher_settings))
-        self.parser_html = ParserHTML(config)
+        self.parser_html = HTMLParser(config)
 
         self.database_manager = DatabaseManager()
 
