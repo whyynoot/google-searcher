@@ -13,6 +13,7 @@ from dash import dash_table
 import pandas as pd
 import dash_bootstrap_components as dbc
 from dash_styles import style_header, style_cell, style_data_conditional, style
+import os
 
 # главный объект приложения. Объекта класса AcSearcher. Будет проинициализироавн вместе с созданием класса AcSearcher.
 # Нужен этот класс для того, чтобы callbackу Dash было к кому обращаться
@@ -23,13 +24,16 @@ app = dash.Dash()
 @app.callback(
     Output('result-container', 'children'),
     [Input('submit-button', 'n_clicks')],
-    [State('query-input', 'value')]
+    [State('query-input', 'value'),
+     State('query-input3', 'value'),
+     State('query-input2', 'value'),
+     State('submit-button', 'n_clicks')]
 )
-def func(n_clicks, query):
+def func(n_clicks, query, positive, negative, n_clicks_button):
     if web_app is None:
         print("Webapp not initialized")
     else:
-        return web_app.process_query(n_clicks, query)
+        return web_app.process_query(n_clicks, query, positive, negative, n_clicks_button)
 # app.css.config.serve_locally = True
 # app.scripts.config.serve_locally = True
 # app.css.append_css({
@@ -62,14 +66,13 @@ class AcSearcher:
         try:
             app.run_server(debug=True, port=self.config['server']['port'], host=self.config['server']['host'])
         except Exception as e:
-            print(e, type(e))
             print("Fatal dash, server error, restarting...")
             self.run()
         
     # Метод обработки входного запроса нашем приложением. 
     # На вход подается запрос пользователя - на выход выдаются полностью проработанные ссылки полностью.
-    def process(self, user_input) -> List[SearchResult]:
-        user_request = self.interpreter.analyse_input(user_input)
+    def process(self, query, postive, negative) -> List[SearchResult]:
+        user_request = self.interpreter.analyse_input(query, postive, negative)
 
         links = []
         for searcher in self.searchers:
@@ -90,21 +93,29 @@ class AcSearcher:
                 print("error during parsing link", e)
 
 
-        for link in parsed_links:
-            self.database_manager.save_search_result(link)
-
         # TODO: Нужна обработка полученных ссылок, анализ на их релевантность
         
         return parsed_links
 
     # Метод обрабатывающий входной запрос из фронтенда. И выводящий таблицу, полученную в результате обработки на фронт.
-    def process_query(self, n_clicks, query):
+    def process_query(self, n_clicks, query, postive, negative, n_clicks_button):
+        if n_clicks_button is None:
+            return dash.no_update
         if n_clicks is None:
             return dash.no_update
-
+        if query is None or negative is None or postive is None:
+            return dash.no_update
+        # Проверка на заполнение всех трех полей
+        if query.strip() == '' or negative.strip() == '' or postive.strip() == '':
+            return 'Заполните все поля'
+        # if n_clicks is None:
+        #    return dash.no_update
+        print("Запрос:", query)
+        print("Включить в запрос:", postive)
+        print("Исключить из поиска:", negative)
         print("Starting processing query...")
         # через метод process мы отправляем пользовательский запрос на дальнейшую обработку
-        parsed_links = self.process(query)
+        parsed_links = self.process(query, postive, negative)
 
         data = {
             'URL-адрес': [],
@@ -113,13 +124,14 @@ class AcSearcher:
             'Актуальность': [],
             'Ключевые слова': []
         }
-        photo_url = 'https://nic-pnb.ru/wp-content/uploads/2014/06/remarchuk.jpg'
+        # image_path = os.path.join('assets', 'remarchuk.jpg')
+        # photo_url = 'https://nic-pnb.ru/wp-content/uploads/2014/06/remarchuk.jpg'
         for link in parsed_links:
-           data['URL-адрес'].append(link.url)
-           data['Фото'].append(link.photo)
-           data['Регион'].append(link.region)
-           data['Актуальность'].append(link.relevance)
-           data['Ключевые слова'].append("Coming later")
+            data['URL-адрес'].append(link.url)
+            data['Фото'].append(link.photo)
+            data['Регион'].append(link.region)
+            data['Актуальность'].append(link.relevance)
+            data['Ключевые слова'].append(link.content_analysis)
 
         # Лучше научиться отрисовывать на основе его. Можете придумать что-то новое, можете использовать мой код, но лучше новое, крассивое
         df = pd.DataFrame(data)
@@ -156,6 +168,10 @@ app.layout = html.Div(
                     className="headerr",
                     children=[
                         dcc.Input(id='query-input', type='text', placeholder='Введите запрос',
+                                  className="styleone"),
+                        dcc.Input(id='query-input3', type='text', placeholder='Обязательно включить',
+                                  className="styleone"),
+                        dcc.Input(id='query-input2', type='text', placeholder='Исключить из поиска',
                                   className="styleone"),
                         html.Button('Найти', id='submit-button', className="styletwo"),
                     ]),

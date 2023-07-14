@@ -27,14 +27,14 @@ class InputInterpreter:
 class ExampleInterpreter(InputInterpreter):
 
     # analyse_input заглушка на статический ответ
-    def analyse_input(self, user_input: str) -> UserRequest:
+    def analyse_input(self, obj, postivie, negative) -> UserRequest:
         ## Строка для анализа: Трубы напорные полиэтиленовые, кроме газопроводных ПЭ100, для транспортировки воды, стандартное размерное отношение SDR17, номинальный наружный диаметр 110 мм, толщина стенки 6,6 мм
-
+        return UserRequest(obj=obj, goal="", postive=postivie, negative=negative)
         ## Логика анализа входных данных с преобразованием
 
         ## На выходе должны получить
-        user_request = UserRequest(obj="трубы напорные", goal="м3", 
-                     postive=[],
-                     negative=["газопроводных ПЭ100"])
+        # user_request = UserRequest(obj="трубы напорные", goal="м3", 
+        #              postive=[],
+        #              negative=["газопроводных ПЭ100"])
         
-        return user_request
+        # return user_request
