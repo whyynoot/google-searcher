@@ -6,3 +6,4 @@ src/ac_searcher/__pycache__
 .DS_Store
 venv
 .idea
+*__pycache__

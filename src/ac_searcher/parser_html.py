@@ -1,10 +1,10 @@
-from iparser_html import IHtmlParser
+from src.ac_searcher.iparser_html import IHtmlParser
 from bs4 import BeautifulSoup
-from search_result import SearchResult
+from src.ac_searcher.search_result import SearchResult
 import requests
-from headers import Headers
-from link import Link
-from input_interpreter import UserRequest
+from src.ac_searcher.headers import Headers
+from src.ac_searcher.link import Link
+from src.ac_searcher.input_interpreter import UserRequest
 #from config import city_settings
 from urllib.parse import urlsplit, urljoin, urlparse
 from collections import Counter

@@ -10,7 +10,7 @@ class Link:
         self.name = name
         # source - из какого поисковика, или системы пришла данная ссылка
         self.source = source
-        #print(f'Initialized link', self)
+        print(f'Initialized link', self)
     
     # Сеттер для постфикса. Позволяет задать значени постфикса
     def set_postfix(self, postfix: str):

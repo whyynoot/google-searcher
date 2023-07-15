@@ -1,4 +1,4 @@
-from ac_searcher import AcSearcher
+from src.ac_searcher.ac_searcher import AcSearcher
 from config import config
 
 def main():
