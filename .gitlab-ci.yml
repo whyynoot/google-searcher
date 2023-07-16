@@ -16,7 +16,11 @@ deploy:
     - cd /home/developer/ac-searcher/
     - git reset --hard HEAD
     - git pull origin master
+    - cd ./searcher_front
+    - npm install --silent
+    - npm install react-scripts@3.4.1 -g --silent
+    - npm run build
     - cp /home/developer/config.py /home/developer/ac-searcher/src/ac_searcher/config.py
-    - cp /home/developer/proxy.py /home/developer/ac-searcher/src/ac_searcher/proxy.py
+    #- cp /home/developer/proxy.py /home/developer/ac-searcher/src/ac_searcher/proxy.py
     - sudo systemctl restart ac-searcher.service
   environment: production
