@@ -7,3 +7,6 @@ src/ac_searcher/__pycache__
 venv
 .idea
 *__pycache__
+*node_modules
+*assests
+media

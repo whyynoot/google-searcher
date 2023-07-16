@@ -84,7 +84,7 @@ class HTMLParser(IHtmlParser):
             filename = os.path.basename(link)
             if not filename or os.path.exists(os.path.join('assets', filename)):
                 filename = f"{uuid.uuid4()}.jpg"
-            filepath = os.path.join(os.path.dirname(__file__), 'assets', filename)
+            filepath = os.path.join('media', filename)
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             with open(filepath, 'wb') as f:
                 for chunk in response.iter_content(1024):
@@ -93,6 +93,7 @@ class HTMLParser(IHtmlParser):
         except Exception as e:
             print("Error with download file", e)
             return ""
+
 
     # Поиск региона, пытаемся удостовериться что регион из user_request был верный и тд.
     def _search_region(self, soup, user_request: UserRequest, link: Link) -> str:
