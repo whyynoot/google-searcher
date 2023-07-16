@@ -25,8 +25,19 @@ class SearchResult:
     def __repr__(self):
         return f"Listing(id={self.id}, url={self.url}, photo={self.photo}, region={self.region}, " \
                f"relevance={self.relevance}, content_analysis={self.content_analysis})"
-
-
+    
+    def set_query_id(self, query_id):
+        self.query_id = query_id
+    
+    def __json__(self):
+        return {
+            'url': self.url,
+            'photo': self.photo,
+            'region': self.region,
+            'relevance': self.relevance,
+            'content_analysis': self.content_analysis,
+        }
+    
 # Класс предсотавляющий возможность анализа ссылок гугл, на их релеватность таким образом чтобы выдать топ лучших ссылок, на основе уже пропаршенных ссылок
 class SearchResultAnalyzerInterface:
 

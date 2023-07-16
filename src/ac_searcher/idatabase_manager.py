@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from search_result import SearchResult
+from src.ac_searcher.search_result import SearchResult
 from typing import List
 
 

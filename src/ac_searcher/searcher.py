@@ -1,12 +1,12 @@
 from urllib.parse import urlencode, urljoin
-from link import Link
-from input_interpreter import UserRequest
+from src.ac_searcher.link import Link
+from src.ac_searcher.input_interpreter import UserRequest
 from typing import List, Tuple
 import requests
-from headers import Headers
+from src.ac_searcher.headers import Headers
 from bs4 import BeautifulSoup
 import re
-from proxy import get_random_proxy
+from src.ac_searcher.proxy import get_random_proxy
 
 # Searcher интрейфес для обращения с разными поисковыми системами на основе формирования и отправки запроса
 class Searcher: 
@@ -50,6 +50,7 @@ class GoogleSearcher(Searcher):
                 if current_search <= result:
                     # Формируем запрос к поисковой системе на основе входных данных и постфикса
                     query = self.form_google_reuqest(user_request, postfix)
+                    print(f"Requesting {query}")
                     try:
                         # Получение html и его анализ
                         html = self._request(query, start)
@@ -82,10 +83,12 @@ class GoogleSearcher(Searcher):
         request_url = urljoin(self.BASE_URL, "?" + encoded_params)
 
         try:
-            response = requests.get(request_url, headers=self.headers.get_headers())
-            #print(response)
+            response = requests.get(request_url, headers=self.headers.get_headers(), proxies=get_random_proxy())
+            print(response)
             if response.status_code == requests.codes.ok: 
                 return response.text
+            elif response.status_code == 429:
+                self._request(query=query, start=start)
             else:
                 raise Exception(f"{self.BASE_URL} request error")
         except Exception as e:
@@ -117,8 +120,7 @@ class GoogleSearcher(Searcher):
                     name = search_div.find('h3').text
                     links.append(Link(url, name, self.BASE_URL))
                 except:
-                    # skipping if not search result
-                    pass
+                    return links, 0
             
             navigation_div = soup.find("div", id="result-stats").text
             pattern = r'(\d+(?:,\d+)*)\s*(?:results|\(.*\))'

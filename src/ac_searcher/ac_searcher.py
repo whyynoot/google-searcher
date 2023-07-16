@@ -1,46 +1,17 @@
-from searcher import Searcher, GoogleSearcher, SearcherSettings
-from input_interpreter import InputInterpreter, ExampleInterpreter
-from link import Link
+from src.ac_searcher.searcher import Searcher, GoogleSearcher, SearcherSettings
+from src.ac_searcher.input_interpreter import InputInterpreter, ExampleInterpreter
+from src.ac_searcher.link import Link
 from typing import List
-from parser_html import HTMLParser
-from database_manager import DatabaseManager
-from search_result import SearchResult
-import dash
-from dash import dcc
-from dash import html
-from dash.dependencies import Input, Output, State
-from dash import dash_table
-import pandas as pd
-import dash_bootstrap_components as dbc
-from dash_styles import style_header, style_cell, style_data_conditional, style
-import os
+from src.ac_searcher.parser_html import HTMLParser
+from src.ac_searcher.database_manager import DatabaseManager
+from src.ac_searcher.search_result import SearchResult
+from src.ac_searcher.task import Task
+from concurrent.futures import ThreadPoolExecutor
 
-# главный объект приложения. Объекта класса AcSearcher. Будет проинициализироавн вместе с созданием класса AcSearcher.
-# Нужен этот класс для того, чтобы callbackу Dash было к кому обращаться
-web_app: object = None
-
-# Инициализируем даш, для последующей работы с ним, настраиваем калбеки даша.
-app = dash.Dash()
-@app.callback(
-    Output('result-container', 'children'),
-    [Input('submit-button', 'n_clicks')],
-    [State('query-input', 'value'),
-     State('query-input3', 'value'),
-     State('query-input2', 'value'),
-     State('submit-button', 'n_clicks')]
-)
-def func(n_clicks, query, positive, negative, n_clicks_button):
-    if web_app is None:
-        print("Webapp not initialized")
-    else:
-        return web_app.process_query(n_clicks, query, positive, negative, n_clicks_button)
-# app.css.config.serve_locally = True
-# app.scripts.config.serve_locally = True
-# app.css.append_css({
-#     'external_url': app.get_asset_url('typography.css')
-# })
-
-
+TASK_STATUS_CREATED = 'created'
+TASK_STATUS_IN_PROGRESS = "working"
+TASK_STATUS_DONE = "done"
+TASK_STATUS_FAILED = "failed"
 # AcSearcher класс для описания программы, ее инициализации и запуска работы
 class AcSearcher:
 
@@ -57,97 +28,72 @@ class AcSearcher:
         self.database_manager = DatabaseManager()
 
         self.config = config
-        # Настраиваем под даш.
-        global web_app
-        web_app = self
 
-    # Метод запуска даш.
-    def run(self):
-        try:
-            app.run_server(debug=True, port=self.config['server']['port'], host=self.config['server']['host'])
-        except Exception as e:
-            print("Fatal dash, server error, restarting...")
-            self.run()
+        self.executor = ThreadPoolExecutor(max_workers=1)
         
     # Метод обработки входного запроса нашем приложением. 
     # На вход подается запрос пользователя - на выход выдаются полностью проработанные ссылки полностью.
-    def process(self, query, postive, negative) -> List[SearchResult]:
+    def process(self, user_request, query_id) -> List[SearchResult]:
+        try:
+            self.database_manager.update_task_status(query_id, TASK_STATUS_IN_PROGRESS)
+            links = []
+            for searcher in self.searchers:
+                searcher_links = searcher.process(user_request)
+                links.extend(searcher_links)
+
+            print(f"Finished parsing searchers, total links: {len(links)}\nStariting parsing them...")
+
+            unique_links = self.get_uniquie_link_list(links)
+
+            parsed_links = []
+            for link in unique_links:
+                try:
+                    searchresultmodel = self.parser_html.analyze(link, user_request)
+                    if searchresultmodel != None:
+                        searchresultmodel.set_query_id(query_id)
+                        parsed_links.append(searchresultmodel)
+                except Exception as e:
+                    print("error during parsing link", e)
+
+
+            for link in parsed_links:
+                self.database_manager.save_search_result(link)
+
+            self.database_manager.update_task_status(query_id, TASK_STATUS_DONE)
+
+            # TODO: Нужна обработка полученных ссылок, анализ на их релевантность
+            
+            return parsed_links
+        except Exception as e:
+            print("Error during process", e)
+            self.database_manager.update_task_status(query_id, TASK_STATUS_FAILED)
+
+    def create_task(self, query, postive, negative): 
         user_request = self.interpreter.analyse_input(query, postive, negative)
-
-        links = []
-        for searcher in self.searchers:
-            searcher_links = searcher.process(user_request)
-            links.extend(searcher_links)
-
-        print(f"Finished parsing searchers, total links: {len(links)}\nStariting parsing them...")
-
-        unique_links = self.get_uniquie_link_list(links)
-
-        parsed_links = []
-        for link in unique_links:
-            try:
-                searchresultmodel = self.parser_html.analyze(link, user_request)
-                if searchresultmodel != None:
-                    parsed_links.append(searchresultmodel)
-            except Exception as e:
-                print("error during parsing link", e)
-
-
-        # TODO: Нужна обработка полученных ссылок, анализ на их релевантность
         
-        return parsed_links
+        query_id = self.database_manager.create_task(user_request)
 
-    # Метод обрабатывающий входной запрос из фронтенда. И выводящий таблицу, полученную в результате обработки на фронт.
-    def process_query(self, n_clicks, query, postive, negative, n_clicks_button):
-        if n_clicks_button is None:
-            return dash.no_update
-        if n_clicks is None:
-            return dash.no_update
-        if query is None or negative is None or postive is None:
-            return dash.no_update
-        # Проверка на заполнение всех трех полей
-        if query.strip() == '' or negative.strip() == '' or postive.strip() == '':
-            return 'Заполните все поля'
-        # if n_clicks is None:
-        #    return dash.no_update
-        print("Запрос:", query)
-        print("Включить в запрос:", postive)
-        print("Исключить из поиска:", negative)
-        print("Starting processing query...")
-        # через метод process мы отправляем пользовательский запрос на дальнейшую обработку
-        parsed_links = self.process(query, postive, negative)
+        if query_id == None:
+            return None
 
-        data = {
-            'URL-адрес': [],
-            'Фото': [],
-            'Регион': [],
-            'Актуальность': [],
-            'Ключевые слова': []
-        }
-        # image_path = os.path.join('assets', 'remarchuk.jpg')
-        # photo_url = 'https://nic-pnb.ru/wp-content/uploads/2014/06/remarchuk.jpg'
-        for link in parsed_links:
-            data['URL-адрес'].append(link.url)
-            data['Фото'].append(link.photo)
-            data['Регион'].append(link.region)
-            data['Актуальность'].append(link.relevance)
-            data['Ключевые слова'].append(link.content_analysis)
+        self.executor.submit(self.process, user_request, query_id)
 
-        # Лучше научиться отрисовывать на основе его. Можете придумать что-то новое, можете использовать мой код, но лучше новое, крассивое
-        df = pd.DataFrame(data)
+        return query_id
+    
+    def check_for_task(self, task_id):
+        task_db = self.database_manager.get_task_from_database(task_id)
+        
+        if task_db is not None:
+            task = Task(task_db)
+        else:
+            return None
 
-        return html.Div(
-            children=html.Div([
-                dash_table.DataTable(
-                    id='table',
-                    columns=[{'name': col, 'id': col} for col in df.columns],
-                    data=df.to_dict('records'),
-                    style_header=style_header,
-                    style_cell=style_cell,
-                    style_data_conditional=style_data_conditional,
-                )],
-                style=style)
-        )
+        # If task exists and done add result
+        if task.status == TASK_STATUS_DONE:
+            result = self.database_manager.get_task_result(task_id)
+            task.set_result(result=result)
+        
+        return task
 
     # Получить уникальные ссылки
     @staticmethod
@@ -159,29 +105,3 @@ class AcSearcher:
                 unique_searcher_links.append(link)
                 unique_links.append(link.url)
         return unique_searcher_links
-
-app.layout = html.Div(
-            className="app-header",
-            children=[
-                html.H1("Наборы данных"),
-                html.Span(
-                    className="headerr",
-                    children=[
-                        dcc.Input(id='query-input', type='text', placeholder='Введите запрос',
-                                  className="styleone"),
-                        dcc.Input(id='query-input3', type='text', placeholder='Обязательно включить',
-                                  className="styleone"),
-                        dcc.Input(id='query-input2', type='text', placeholder='Исключить из поиска',
-                                  className="styleone"),
-                        html.Button('Найти', id='submit-button', className="styletwo"),
-                    ]),
-                dcc.Loading(
-                    id='loading',
-                    type='circle',
-                    children=[
-                        html.Td(id='result-container', className="style-for-table")
-                    ],
-                    style={'font-size': '80px', 'width': '200px', 'height': '200px'}
-                )
-            ]
-)
