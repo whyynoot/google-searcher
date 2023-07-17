@@ -19,7 +19,7 @@ deploy:
     - cd ./searcher_front
     - npm install --silent
     - npm run build
-    - cp -rf /home/developer/ac-searcher/ /var/www/ac-searcher
+    - cp -rf /home/developer/ac-searcher/ /var/www/
     #- cp /home/developer/proxy.py /home/developer/ac-searcher/src/ac_searcher/proxy.py
     - sudo systemctl restart ac-searcher.service
     - sudo systemctl restart nginx
