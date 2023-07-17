@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%$i1$x62$yws=cmq^yn2#!=s9&w_=9-^dwuv3gfi)krks-@-fg'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '*',
@@ -82,10 +82,6 @@ WSGI_APPLICATION = 'ac_searcher.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
 }
 
 
@@ -118,6 +114,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+ADMIN_ENABLE = False
 
 
 # Static files (CSS, JavaScript, Images)
