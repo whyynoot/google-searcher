@@ -1,11 +1,11 @@
 from src.ac_searcher.iparser_html import IHtmlParser
+import re
 from bs4 import BeautifulSoup
 from src.ac_searcher.search_result import SearchResult
 import requests
 from src.ac_searcher.headers import Headers
 from src.ac_searcher.link import Link
 from src.ac_searcher.input_interpreter import UserRequest
-#from config import city_settings
 from urllib.parse import urlsplit, urljoin, urlparse
 from collections import Counter
 import os
@@ -13,20 +13,24 @@ import uuid
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 
-# Реализация интерйфейса HTML Parser
+# Реализация интерфейса HTML Parser
 class HTMLParser(IHtmlParser):
     # Атрибуты, например класс Header
     # Реализация на основе конфигурации
-    # В конфигурации идут, как и по какому признаку индефицировать регион.
+    # В конфигурации идут, как и по какому признаку индицировать регион.
     def __init__(self, config) -> None:
         self.headers = Headers()
         self.config = config
         nltk.download('stopwords')  # Загрузка стоп-слов
         nltk.download('punkt')  # Загрузка ресурсов для токенизации
 
-    # основной метод для работы с классом. Делает запрос, поиск фотографии, сохранение, контект анализ, анализ региона и актуальности (через мета-теги)
+    # Основной метод для работы с классом. Делает запрос, поиск фотографии, сохранение,
+    # контекст анализ, анализ региона и актуальности (через мета-теги)
     def analyze(self, link: Link, user_request: UserRequest) -> SearchResult:
         html = self._request(link.url)
         photo = ""
@@ -38,6 +42,8 @@ class HTMLParser(IHtmlParser):
 
             if link_photo != "":
                 photo = self._download_photo(link_photo)
+            else:
+                photo = self._take_screenshot(link.url)
 
             search_region = self._search_region(soup, user_request, link)
             perform_content_analysis = self._perform_content_analysis(soup)
@@ -58,7 +64,8 @@ class HTMLParser(IHtmlParser):
             print(f"An error occurred during the request: {str(e)}")
             return ""
 
-    # На вход подается объект soup в которой уже засунули html и он готов для работы, на выход мы получаем 1 фотографию (ссылку на нее). МЕТОД ПРИВАТНЫЙ
+    # На вход подается объект soup в которой уже засунули html и он готов для работы,
+    # на выход мы получаем 1 фотографию (ссылку на нее). МЕТОД ПРИВАТНЫЙ
     def _search_photo(self, soup, user_request, url) -> str:
         images = soup.find_all('img')
         base_url = self._get_base_url(url)
@@ -72,17 +79,19 @@ class HTMLParser(IHtmlParser):
                 max_similarity = similarity
                 image_src = image.get('src', '')
                 absolute_src = self._get_absolute_url(base_url, image_src)
-                result = absolute_src
+                if self._is_valid_extension(absolute_src):
+                    result = absolute_src
         return result
 
-    # Функция загрзуки, на вход мы получаем ссылку на файл, который надо загрузить, на выход мы отдаем сгенированное название нашей фотографии в файловой системе МЕТОД ПРИВАТНЫЙ
+    # Функция загрузки, на вход мы получаем ссылку на файл, который надо загрузить,
+    # на выход мы отдаем сгенерированное название нашей фотографии в файловой системе МЕТОД ПРИВАТНЫЙ
     def _download_photo(self, link: str) -> str:
         try:
             response = requests.get(link, stream=True)
             if response.status_code != 200:
                 return ""
             filename = os.path.basename(link)
-            if not filename or os.path.exists(os.path.join('assets', filename)):
+            if not filename or os.path.exists(os.path.join('media', filename)):
                 filename = f"{uuid.uuid4()}.jpg"
             filepath = os.path.join('media', filename)
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -93,7 +102,6 @@ class HTMLParser(IHtmlParser):
         except Exception as e:
             print("Error with download file", e)
             return ""
-
 
     # Поиск региона, пытаемся удостовериться что регион из user_request был верный и тд.
     def _search_region(self, soup, user_request: UserRequest, link: Link) -> str:
@@ -112,23 +120,24 @@ class HTMLParser(IHtmlParser):
         else:
             return link.postfix
 
-
-    # Произвести контект анализ страницы, на выходе результаты контент анализа. На вход поступает объект супа МЕТОД ПРИВАТНЫЙ
+    # Произвести контекст анализ страницы, на выходе результаты контент анализа.
+    # На вход поступает объект супа МЕТОД ПРИВАТНЫЙ
     def _perform_content_analysis(self, soup) -> str:
         result = ""
-
-        paragraphs = soup.find_all('p')
         stop_words = set(stopwords.words('russian'))
         word_counter = Counter()
+        separator = ' '  # Разделитель между текстовыми элементами
+        for element in soup.find_all(text=True):
+            text = element.strip()
 
-        for paragraph in paragraphs:
-            text = paragraph.get_text()
             words = nltk.word_tokenize(text)
-            filtered_words = [word.lower() for word in words if word.isalpha() and word not in stop_words]
+            filtered_words = [word.lower() for word in words if self._is_cyrillic_word(word)
+                              and word.isalpha() and word not in stop_words]
+
             word_counter.update(filtered_words)
 
         most_common_words = word_counter.most_common(5)
-        result = ' '.join(word for word, count in most_common_words)
+        result = separator.join(word for word, count in most_common_words)
         return result
 
     def _get_base_url(self, url):
@@ -146,3 +155,40 @@ class HTMLParser(IHtmlParser):
             if keyword in text:
                 similarity += 1
         return similarity
+
+    def _is_valid_extension(self, link: str) -> bool:
+        valid_extensions = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.bmp']
+        ext = os.path.splitext(link)[1].lower()
+        return ext in valid_extensions
+
+    def _take_screenshot(self, url: str) -> str:
+        try:
+            chrome_driver_path = os.path.join("drivers", "chromedriver")  # Путь к ChromeDriver
+            chrome_binary_path = os.path.join("drivers", "chrome", "chrome")  # Путь к исполняемому файлу Google Chrome
+
+            options = Options()
+            options.add_argument("--headless")  # Запуск браузера в режиме без графического интерфейса
+            options.binary_location = chrome_binary_path  # Указываем путь к исполняемому файлу Google Chrome
+
+            service = Service(chrome_driver_path)
+            service.start()
+
+            driver = webdriver.Remote(service.service_url, options=options)
+            driver.get(url)
+
+            media_folder = 'media'
+            screenshot_path = os.path.join(media_folder, f"{uuid.uuid4()}.png")
+            os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+
+            driver.save_screenshot(screenshot_path)
+            driver.quit()
+
+            return screenshot_path
+
+        except Exception as e:
+            print("Error taking screenshot:", e)
+            return ""
+
+    # Функция для проверки, является ли слово кириллическим
+    def _is_cyrillic_word(self, word):
+        return bool(re.match('^[а-яё]+$', word, re.IGNORECASE))

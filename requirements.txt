@@ -10,3 +10,4 @@ nltk==3.8.1
 django==4.2.3
 djangorestframework==3.14.0
 drf-yasg==1.21.6
+selenium==4.10.0
