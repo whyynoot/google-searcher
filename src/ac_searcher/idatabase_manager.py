@@ -30,5 +30,5 @@ class IDatabaseManager(ABC):
 
     # Метод для закрытия объекта сессии
     @abstractmethod
-    def close_session(self):
+    def close_session(self, session):
         pass

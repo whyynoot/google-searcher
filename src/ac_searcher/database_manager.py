@@ -8,7 +8,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from sqlalchemy.exc import OperationalError
 
-
 from dotenv import load_dotenv
 import os
 
@@ -22,7 +21,6 @@ class DatabaseManager(IDatabaseManager):
     def __init__(self):
         self.engine = None
         self.Base = None
-        self.session = None
         self.database_url = None
         self.is_initialized = False
 
@@ -93,52 +91,54 @@ class DatabaseManager(IDatabaseManager):
             status = Column(Text, nullable=False)
             obj = Column(Text, nullable=False)
             # Not always in
-            postive = Column(Text, nullable=True)
+            positive = Column(Text, nullable=True)
             negative = Column(Text, nullable=True)
 
             def __init__(self, user_request):
                 self.status = "created"
                 self.obj = user_request.object
                 if len(user_request.positive) != 0:
-                    self.postive == ''.join(user_request.positive)
+                    self.positive = ''.join(user_request.positive)
                 if len(user_request.negative) != 0:
-                    self.postive == ''.join(user_request.negative)
+                    self.negative = ''.join(user_request.negative)
 
         self.QueryTaskDB = QueryTaskDB
         self.SearchResultDB = SearchResultDB
 
     def create_session(self):
         Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        return Session()
 
     def create_task(self, user_request):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
+                session = self.create_session()
                 new_request = self.QueryTaskDB(user_request)
-                self.session.add(new_request)
-                self.session.flush()
-                self.session.commit()
+                session.add(new_request)
+                session.flush()
+                session.commit()
                 return new_request.id
         except Exception as e:
             print("Error occurred during create_task():", e)
             return None
         finally:
-            self.close_session()
+            self.close_session(session)
 
     def update_task_status(self, query_id, status):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
-                existing_task = self.session.query(self.QueryTaskDB).get(query_id)
+                session = self.create_session()
+                existing_task = session.query(self.QueryTaskDB).get(query_id)
 
                 if existing_task is not None:
                     existing_task.status = status
-                    self.session.commit()
+                    session.commit()
                     return True
                 else:
                     print("Error: Task with query_id not found")
@@ -147,81 +147,86 @@ class DatabaseManager(IDatabaseManager):
             print("Error occurred during update_task_status():", e)
             return False
         finally:
-            self.close_session()
+            self.close_session(session)
 
     def get_task_from_database(self, query_id):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
-                result = self.session.query(self.QueryTaskDB).filter_by(id=query_id).first()
+                session = self.create_session()
+                result = session.query(self.QueryTaskDB).filter_by(id=query_id).first()
                 return result
         finally:
-            self.close_session()
-    
+            self.close_session(session)
+
     def get_task_result(self, query_id):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
-                results = self.session.query(self.SearchResultDB).filter(self.SearchResultDB.query_task_id == query_id ).all()
+                session = self.create_session()
+                results = session.query(self.SearchResultDB).filter(self.SearchResultDB.query_task_id == query_id).all()
                 listings = []
                 for result in results:
                     listing = SearchResult(result)
                     listings.append(listing)
                 return listings
         finally:
-            self.close_session()
+            self.close_session(session)
 
     def save_search_result(self, search_result):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
+                session = self.create_session()
                 new_result = self.SearchResultDB(search_result)
-                self.session.add(new_result)
-                self.session.commit()
+                session.add(new_result)
+                session.commit()
         except Exception as e:
             print("Error occurred during save_search_result():", e)
             return False
         finally:
-            self.close_session()
+            self.close_session(session)
 
         return True
 
     def get_search_result_from_database(self, search_result_id):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
-                result = self.session.query(self.SearchResultDB).filter_by(id=search_result_id).first()
+                session = self.create_session()
+                result = session.query(self.SearchResultDB).filter_by(id=search_result_id).first()
                 if result:
                     search_result = SearchResult(result)
                     return search_result
                 else:
                     return None
         finally:
-            self.close_session()
+            self.close_session(session)
 
     def get_all_search_results_from_database(self):
+        session = None
         try:
             if not self.is_initialized:
                 print("Error: DatabaseManager is not initialized")
             else:
-                self.create_session()
-                results = self.session.query(self.SearchResultDB).all()
+                session = self.create_session()
+                results = session.query(self.SearchResultDB).all()
                 listings = []
                 for result in results:
                     listing = SearchResult(result)
                     listings.append(listing)
                 return listings
         finally:
-            self.close_session()
+            self.close_session(session)
 
-    def close_session(self):
-        if self.session is not None:
-            self.session.close()
+    def close_session(self, session):
+        if session is not None:
+            session.close()
