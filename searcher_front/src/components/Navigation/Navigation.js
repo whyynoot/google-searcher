@@ -13,7 +13,7 @@ function Navigation() {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav>
             <Nav.Link href="/searcher">Поисковик</Nav.Link>
-            <Nav.Link href="/swagger">Документация</Nav.Link>
+            {/* <Nav.Link href="/swagger">Документация</Nav.Link> */}
           </Nav>
           </Navbar.Collapse>
       </Container>
