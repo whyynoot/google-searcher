@@ -82,16 +82,16 @@ class AcSearcher:
     
     def check_for_task(self, task_id):
         task_db = self.database_manager.get_task_from_database(task_id)
-        
+        print(task_db.status)
         if task_db is not None:
             task = Task(task_db)
         else:
             return None
-
         # If task exists and done add result
         if task.status == TASK_STATUS_DONE:
             result = self.database_manager.get_task_result(task_id)
             task.set_result(result=result)
+        print(task.result)
         
         return task
 
