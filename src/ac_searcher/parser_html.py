@@ -16,8 +16,6 @@ from nltk.tokenize import word_tokenize
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-
 
 
 # Реализация интерфейса HTML Parser
@@ -165,14 +163,20 @@ class HTMLParser(IHtmlParser):
 
     def _take_screenshot(self, url: str) -> str:
         try:
-            # chrome_driver_path = os.path.join("drivers", "chromedriver")  # Путь к ChromeDriver
-            # chrome_binary_path = os.path.join("drivers", "chrome", "chrome")  # Путь к исполняемому файлу Google Chrome
+            chrome_driver_path = os.path.join("drivers", "chromedriver")  # Путь к ChromeDriver
+            chrome_binary_path = os.path.join("drivers", "chrome", "chrome")  # Путь к исполняемому файлу Google Chrome
+
+            # Устанавливаем права на исполнение для ChromeDriver
+            os.chmod(chrome_driver_path, 0o755)
 
             options = Options()
             options.add_argument("--headless")  # Запуск браузера в режиме без графического интерфейса
-            #options.binary_location = chrome_binary_path  # Указываем путь к исполняемому файлу Google Chrome
-            #driver = webdriver.Chrome(, options=options)
-            service = Service(ChromeDriverManager().install())
+            options.binary_location = chrome_binary_path  # Указываем путь к исполняемому файлу Google Chrome
+
+            # Устанавливаем права на исполнение для исполняемого файла Google Chrome
+            os.chmod(chrome_binary_path, 0o755)
+
+            service = Service(chrome_driver_path)
             service.start()
 
             driver = webdriver.Remote(service.service_url, options=options)
