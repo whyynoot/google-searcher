@@ -12,3 +12,4 @@ venv
 media
 src/ac_searcher/drivers
 src/ac_searcher/.env
+*drivers
